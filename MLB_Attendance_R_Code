@@ -1,0 +1,63 @@
+```{r, include=FALSE,echo=FALSE}
+library(tidyverse)
+library(Lahman)
+
+```
+
+Using the Lahman package data set on MLB attendance, we can look at how a team's season win total relates to their attendance. The theory is more wins leads to higher attendance. Does recent history agree with this claim?
+
+```{r,echo=FALSE}
+teams = Teams # bring in the Teams data frame
+
+# 2022 attendance data frame
+att22 = teams %>% select(yearID, lgID, name, attendance) %>% filter(yearID == 2022) 
+
+# 2021 attendance data frame
+att21 = teams %>% select(yearID, lgID, name, attendance) %>% filter(yearID == 2021)
+
+# 2019 attendance data frame
+att19 = teams %>% select(yearID, lgID, name, attendance) %>% filter(yearID == 2019)
+
+#Plot for 2022 attendance by team, colored by league
+plot22 = ggplot(att22, aes(x=reorder(name,-attendance), y=attendance,fill=lgID)) + geom_col() + theme_light() + theme(axis.text.x=element_text(angle=45, hjust=1, size=7)) + theme(axis.text.y=element_text(angle=45, hjust=1)) + labs(x="Team", y="Attendance") + ggtitle("2022 MLB Attendance Totals by Team") + scale_y_continuous(labels = function(x) format(x, scientific=FALSE)) + scale_fill_manual(values=c('red','blue'),name = "League")
+plot22
+
+#Plot for 2021 attendance by team, colored by league
+plot21 = ggplot(att21, aes(x=reorder(name,-attendance), y=attendance,fill=lgID)) + geom_col() + theme_light() + theme(axis.text.x=element_text(angle=45, hjust=1, size=7)) + theme(axis.text.y=element_text(angle=45, hjust=1)) + labs(x="Team", y="Attendance") + ggtitle("2021 MLB Attendance Totals by Team") + scale_y_continuous(labels = function(x) format(x, scientific=FALSE)) + scale_fill_manual(values=c('red','blue'),name = "League")
+plot21
+
+#Plot for 2019 attendance by team, colored by league
+plot19 = ggplot(att19, aes(x=reorder(name,-attendance), y=attendance,fill=lgID)) + geom_col() + theme_light() + theme(axis.text.x=element_text(angle=45, hjust=1, size=7)) + theme(axis.text.y=element_text(angle=45, hjust=1)) + labs(x="Team", y="Attendance") + ggtitle("2019 MLB Attendance Totals by Team") + scale_y_continuous(labels = function(x) format(x, scientific=FALSE)) + scale_fill_manual(values=c('red','blue'),name = "League")
+plot19
+```
+
+Looking at the leading teams over the three most recent seasons (2023 data not available yet), we see similar names across the top with the Los Angeles Dodgers and St. Louis Cardinals in the top five in all three years. An outside factor to consider here is that in 2021, teams were subject to local COVID guidelines, so a team like the New York Yankees who were number three in both 2022 and 2019 saw their attendance fall for reasons unrelated to their season wins total. With this in mind, when we analyze the effect win total has, we have to exclude both 2021 and 2020 which was the shortened season with no fans. These situations would unjustly skew the results artificially create a relationship between wins and and attendance as in 2020, all teams had significantly lower win totals and zero attendance, making it seem as if having extrememly low win totals creats no attendnace which was obviously not the case in 2020.
+
+```{r,include=FALSE, echo=FALSE}
+#Decade data from 2012 to 2022 without 2020 and 2021
+dec.data = teams %>% filter(yearID >= 2012) %>% filter(yearID != 2021) %>% filter(yearID != 2020)
+
+#Model for Attendance using simple linear regression
+mod.att = lm(attendance ~ W, data = dec.data)
+summary(mod.att)
+
+#Plot for attendance based on wins with line of best fit
+plot.att = ggplot(dec.data, aes(W,attendance))+geom_point()+scale_y_continuous(labels = function(x) format(x, scientific=FALSE))+stat_smooth(method = "lm",geom="smooth")+theme_light()+ggtitle("Attendance Against Wins")
+
+#Model accounting for league
+mod.lg = lm(attendance~W+lgID, data = dec.data)
+summary(mod.lg)
+
+#Plot for attendance by league based on wins with line of best fit for each league
+plot.lg = ggplot(dec.data, aes(W,attendance,color=lgID))+geom_point()+scale_y_continuous(labels = function(x) format(x, scientific=FALSE))+stat_smooth(method = "lm",geom="smooth")+theme_light()+scale_color_manual(values=c('red','blue'),name = "League")+ggtitle("Attendance Against Wins by League")
+```
+
+
+```{r,echo=FALSE}
+plot.att
+plot.lg
+```
+
+Based on a simple linear regression model, wins has a significant impact on a team's attendance total for a given season, but does not give completely explain a teams attendance. When accounting for the different leagues, we see that the being in the National League has a significant impact on attendance over being in the American League which is an interesting note. Although, the difference in leagues does not add much to the explanation of total attendance. Some factors that are not included in this Lahman data set could be influential to the model would be city population, stadium age, and number of all star players. The assumptions with these would be the larger cities bring in more fans, newer stadiums create an attraction for fans, and that all star players are more popular and can bring in more fans just to see them play. 
+
+Overall, trying to determine what affects a team's attendance is not as cut and dry as a team's success. Many factors go into getting fans to the ballpark, but having teams invest in their own success can create an impact in raising their attendance totals.
